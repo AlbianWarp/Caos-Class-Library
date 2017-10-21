@@ -89,17 +89,17 @@ namespace CAOS
     }
     public class CaosResult
     {
-        private bool failed;
-        public bool Failed { get { return failed; } }
-        private int processid;
-        public int ProcessID { get { return processid; } }
-        private string content;
-        public string Content { get { return content; } }
-        public CaosResult(int Failed, string Content, int ProcessID)
+        public int ResultCode { get; private set; }
+        public bool Succeded { get; private set; }
+        public int ProcessId { get; private set; }
+        public string Content { get; private set; }
+
+        public CaosResult(int resultCode, string content, int processID)
         {
-            this.failed = Convert.ToBoolean(Failed);
-            this.content = Content;
-            this.processid = ProcessID;
+            this.ResultCode = resultCode;
+            this.Succeded = (resultCode == 0);
+            this.Content = content;
+            this.ProcessId = processID;
         }
     }
 }
