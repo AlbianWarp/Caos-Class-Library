@@ -8,6 +8,8 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
+            CaosInjector.
+
             CaosResult result = null;
             try
             {

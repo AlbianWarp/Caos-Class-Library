@@ -20,10 +20,28 @@ namespace CAOS
             //It seems to me that these exceptions shouldn't be
             //  thrown from the initializer. But it seems to
             //  be mostly an opionion-based thing w/o any
-            //  standard best practices -JG
+            //  standard best practices. -JG
 
             //InitInjector();
             //CloseInjector();
+        }
+
+        /// <summary>
+        /// This might not be necessary.
+        ///     Hmm -JG
+        /// </summary>
+        public static bool CanConnectToGame()
+        {
+            try
+            {
+                InitInjector();
+                CloseInjector();
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                return false;
+            }
         }
 
         private static void InitInjector()
@@ -57,11 +75,17 @@ namespace CAOS
             Mutex.Close();
         }
 
-        public static bool TryAddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script, out CaosResult caosResult)
+        public static bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
+        {
+            CaosResult temp;
+            return TryAddScriptToScriptorium(family, genus, species, eventNum, script, out temp);
+        }
+
+        public static bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script, out CaosResult caosResult)
         {
             try
             {
-                caosResult = AddScriptToScriptorium(Familiy, Genus, Species, Event, Script);
+                caosResult = AddScriptToScriptorium(family, genus, species, eventNum, script);
                 return true;
             }
             catch (NoGameCaosException)
@@ -71,16 +95,22 @@ namespace CAOS
             }
         }
 
-        public static CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
+        public static CaosResult AddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
         {
-            return ExecuteCaosGetResult(Script, "scrp " + Familiy + " " + Genus + " " + Species + " " + Event);
+            return ExecuteCaosGetResult(script, "scrp " + family + " " + genus + " " + species + " " + eventNum);
         }
 
-        public static bool TryExecuteCaosGetResult(string CaosAsString, out CaosResult caosResult)
+        public static bool TryExecuteCaosGetResult(string caosAsString)
+        {
+            CaosResult temp;
+            return TryExecuteCaosGetResult(caosAsString, out temp);
+        }
+
+        public static bool TryExecuteCaosGetResult(string caosAsString, out CaosResult caosResult)
         {
             try
             {
-                caosResult = ExecuteCaosGetResult(CaosAsString);
+                caosResult = ExecuteCaosGetResult(caosAsString);
                 return true;
             }
             catch (NoGameCaosException)
