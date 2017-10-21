@@ -30,11 +30,11 @@ namespace CAOS
         {
             try
             {
-                Mutex = Mutex.OpenExisting(this.GameName + "_mutex");
-                MemFile = MemoryMappedFile.OpenExisting(this.GameName + "_mem");
+                Mutex = Mutex.OpenExisting(GameName + "_mutex");
+                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
                 MemViewAccessor = MemFile.CreateViewAccessor();
-                ResultEventHandle = EventWaitHandle.OpenExisting(this.GameName + "_result");
-                RequestRventHandle = EventWaitHandle.OpenExisting(this.GameName + "_request");
+                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
+                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
             }
             catch (Exception e)
                 when (e is WaitHandleCannotBeOpenedException
@@ -71,13 +71,12 @@ namespace CAOS
             }
         }
 
-        public  CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
+        public static CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
         {
             return ExecuteCaosGetResult(Script, "scrp " + Familiy + " " + Genus + " " + Species + " " + Event);
         }
 
-
-        public bool TryExecuteCaosGetResult(string CaosAsString, out CaosResult caosResult)
+        public static bool TryExecuteCaosGetResult(string CaosAsString, out CaosResult caosResult)
         {
             try
             {
@@ -91,7 +90,7 @@ namespace CAOS
             }
         }
 
-        public  CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
+        public static CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
         {
             InitInjector();
             byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
@@ -126,7 +125,7 @@ namespace CAOS
             return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
         }
 
-        public int ProcessID()
+        public static int ProcessID()
         {
             Mutex.WaitOne();
             int ProcessID = MemViewAccessor.ReadInt16(4);
