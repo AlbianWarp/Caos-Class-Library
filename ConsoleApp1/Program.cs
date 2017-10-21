@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CAOS;
 using System.Diagnostics;
 
@@ -12,8 +8,16 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            CaosInjector injector = new CaosInjector("Docking Station");
-            CaosResult result = injector.ExecuteCaosGetResult("outs \"hi\"");
+            CaosResult result = null;
+            try
+            {
+                result = (new CaosInjector("Docking Station"))
+                    .ExecuteCaosGetResult("outs \"hi\"");
+            }catch (NoGameCaosException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
             if (result.Succeded)
             {
                 Console.WriteLine(result.Content);
@@ -23,6 +27,11 @@ namespace ConsoleApp1
                 Debug.Assert(result.ResultCode != 0);
                 Console.WriteLine($"Error Code: {result.ResultCode}");
             }
+
+            //try return bool strategy
+            if()
+
+
             Console.ReadKey();
         }
     }

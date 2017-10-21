@@ -5,21 +5,28 @@ using System.Threading;
 
 namespace CAOS
 {
-    public class CaosInjector
+    public static class CaosInjector
     {
-        static Mutex Mutex;
-        static MemoryMappedFile MemFile;
-        static MemoryMappedViewAccessor MemViewAccessor;
-        static EventWaitHandle ResultEventHandle;
-        static EventWaitHandle RequestRventHandle;
-        private string GameName;
-        public  CaosInjector(string GameName)
+        private static Mutex Mutex;
+        private static MemoryMappedFile MemFile;
+        private static MemoryMappedViewAccessor MemViewAccessor;
+        private static EventWaitHandle ResultEventHandle;
+        private static EventWaitHandle RequestRventHandle;
+        private static string GameName;
+
+        public static void SetGame(string gameName)
         {
-            this.GameName = GameName;
-            InitInjector();
-            CloseInjector();
+            GameName = gameName;
+            //It seems to me that these exceptions shouldn't be
+            //  thrown from the initializer. But it seems to
+            //  be mostly an opionion-based thing w/o any
+            //  standard best practices -JG
+
+            //InitInjector();
+            //CloseInjector();
         }
-        private void InitInjector()
+
+        private static void InitInjector()
         {
             try
             {
@@ -29,11 +36,19 @@ namespace CAOS
                 ResultEventHandle = EventWaitHandle.OpenExisting(this.GameName + "_result");
                 RequestRventHandle = EventWaitHandle.OpenExisting(this.GameName + "_request");
             }
-            catch (Exception)
+            catch (Exception e)
+                when (e is WaitHandleCannotBeOpenedException
+                || e is System.IO.FileNotFoundException)
             {
+                throw new NoGameCaosException("No running game engine found.", e);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw new NoGameCaosException("Cannot find or access any running game engine.", e);
             }
         }
-        private void CloseInjector()
+
+        private static void CloseInjector()
         {
             RequestRventHandle.Close();
             ResultEventHandle.Close();
@@ -41,10 +56,41 @@ namespace CAOS
             MemFile.Dispose();
             Mutex.Close();
         }
+
+        public static bool TryAddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script, out CaosResult caosResult)
+        {
+            try
+            {
+                caosResult = AddScriptToScriptorium(Familiy, Genus, Species, Event, Script);
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                caosResult = null;
+                return false;
+            }
+        }
+
         public  CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
         {
             return ExecuteCaosGetResult(Script, "scrp " + Familiy + " " + Genus + " " + Species + " " + Event);
         }
+
+
+        public bool TryExecuteCaosGetResult(string CaosAsString, out CaosResult caosResult)
+        {
+            try
+            {
+                caosResult = ExecuteCaosGetResult(CaosAsString);
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                caosResult = null;
+                return false;
+            }
+        }
+
         public  CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
         {
             InitInjector();
@@ -79,6 +125,7 @@ namespace CAOS
             Thread.Sleep(50);
             return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
         }
+
         public int ProcessID()
         {
             Mutex.WaitOne();
