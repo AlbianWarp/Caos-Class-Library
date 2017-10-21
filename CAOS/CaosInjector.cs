@@ -5,35 +5,38 @@ using System.Threading;
 
 namespace CAOS
 {
-    public class CaosInjector
+    public static class CaosInjector
     {
-        static Mutex Mutex;
-        static MemoryMappedFile MemFile;
-        static MemoryMappedViewAccessor MemViewAccessor;
-        static EventWaitHandle ResultEventHandle;
-        static EventWaitHandle RequestRventHandle;
-        private string GameName;
-        public  CaosInjector(string GameName)
+        static public Mutex Mutex;
+        static public MemoryMappedFile MemFile;
+        static public MemoryMappedViewAccessor MemViewAccessor;
+        static public EventWaitHandle ResultEventHandle;
+        static public EventWaitHandle RequestRventHandle;
+        static private string GameName = null;
+
+        public static void SetGame(string gameName)
         {
-            this.GameName = GameName;
+            GameName = gameName;
             InitInjector();
             CloseInjector();
         }
-        private void InitInjector()
+
+        private static void InitInjector()
         {
             try
             {
-                Mutex = Mutex.OpenExisting(this.GameName + "_mutex");
-                MemFile = MemoryMappedFile.OpenExisting(this.GameName + "_mem");
+                Mutex = Mutex.OpenExisting(GameName + "_mutex");
+                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
                 MemViewAccessor = MemFile.CreateViewAccessor();
-                ResultEventHandle = EventWaitHandle.OpenExisting(this.GameName + "_result");
-                RequestRventHandle = EventWaitHandle.OpenExisting(this.GameName + "_request");
+                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
+                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
             }
             catch (Exception)
             {
             }
         }
-        private void CloseInjector()
+
+        private static void CloseInjector()
         {
             RequestRventHandle.Close();
             ResultEventHandle.Close();
@@ -41,11 +44,13 @@ namespace CAOS
             MemFile.Dispose();
             Mutex.Close();
         }
-        public  CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
+
+        public static CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
         {
             return ExecuteCaosGetResult(Script, "scrp " + Familiy + " " + Genus + " " + Species + " " + Event);
         }
-        public  CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
+
+        public static CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
         {
             InitInjector();
             byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
@@ -79,7 +84,8 @@ namespace CAOS
             Thread.Sleep(50);
             return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
         }
-        public int ProcessID()
+
+        public static int ProcessID()
         {
             Mutex.WaitOne();
             int ProcessID = MemViewAccessor.ReadInt16(4);
