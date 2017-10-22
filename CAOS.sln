@@ -1,6 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CAOS", "CAOS\CAOS.csproj", "{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}"
 EndProject
 Global
@@ -13,8 +17,15 @@ Global
 		{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}.Release|Any CPU.Build.0 = Release|Any CPU
+		{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6519CBA1-2991-4AE4-895E-92B6AA97DDE4}
 	EndGlobalSection
 EndGlobal

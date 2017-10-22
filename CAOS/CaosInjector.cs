@@ -7,32 +7,65 @@ namespace CAOS
 {
     public class CaosInjector
     {
-        static Mutex Mutex;
-        static MemoryMappedFile MemFile;
-        static MemoryMappedViewAccessor MemViewAccessor;
-        static EventWaitHandle ResultEventHandle;
-        static EventWaitHandle RequestRventHandle;
+        private Mutex Mutex;
+        private MemoryMappedFile MemFile;
+        private MemoryMappedViewAccessor MemViewAccessor;
+        private EventWaitHandle ResultEventHandle;
+        private EventWaitHandle RequestRventHandle;
         private string GameName;
-        public  CaosInjector(string GameName)
+
+        public CaosInjector(string gameName)
         {
-            this.GameName = GameName;
-            InitInjector();
-            CloseInjector();
+            GameName = gameName;
+            //It seems to me that these exceptions shouldn't be
+            //  thrown from the constructor. But it seems to
+            //  be mostly an opionion-based thing w/o any
+            //  standard best practices. -JG
+
+            //InitInjector();
+            //CloseInjector();
         }
+
+        /// <summary>
+        /// This might not be necessary.
+        ///     Hmm -JG
+        /// </summary>
+        public bool CanConnectToGame()
+        {
+            try
+            {
+                InitInjector();
+                CloseInjector();
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                return false;
+            }
+        }
+
         private void InitInjector()
         {
             try
             {
-                Mutex = Mutex.OpenExisting(this.GameName + "_mutex");
-                MemFile = MemoryMappedFile.OpenExisting(this.GameName + "_mem");
+                Mutex = Mutex.OpenExisting(GameName + "_mutex");
+                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
                 MemViewAccessor = MemFile.CreateViewAccessor();
-                ResultEventHandle = EventWaitHandle.OpenExisting(this.GameName + "_result");
-                RequestRventHandle = EventWaitHandle.OpenExisting(this.GameName + "_request");
+                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
+                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
             }
-            catch (Exception)
+            catch (Exception e)
+                when (e is WaitHandleCannotBeOpenedException
+                || e is System.IO.FileNotFoundException)
             {
+                throw new NoGameCaosException("No running game engine found.", e);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw new NoGameCaosException("Cannot find or access any running game engine.", e);
             }
         }
+
         private void CloseInjector()
         {
             RequestRventHandle.Close();
@@ -41,12 +74,55 @@ namespace CAOS
             MemFile.Dispose();
             Mutex.Close();
         }
-        public  CaosResult AddScriptToScriptorium(int Familiy, int Genus, int Species, int Event, string Script)
+
+        public bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
         {
-            return ExecuteCaosGetResult(Script, "scrp " + Familiy + " " + Genus + " " + Species + " " + Event);
+            CaosResult temp;
+            return TryAddScriptToScriptorium(family, genus, species, eventNum, script, out temp);
         }
-        public  CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
+
+        public bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script, out CaosResult caosResult)
         {
+            try
+            {
+                caosResult = AddScriptToScriptorium(family, genus, species, eventNum, script);
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                caosResult = null;
+                return false;
+            }
+        }
+
+        public CaosResult AddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
+        {
+            return ExecuteCaos(script, "scrp " + family + " " + genus + " " + species + " " + eventNum);
+        }
+
+        public bool TryExecuteCaos(string caosAsString)
+        {
+            CaosResult temp;
+            return TryExecuteCaos(caosAsString, out temp);
+        }
+
+        public bool TryExecuteCaos(string caosAsString, out CaosResult caosResult)
+        {
+            try
+            {
+                caosResult = ExecuteCaos(caosAsString);
+                return true;
+            }
+            catch (NoGameCaosException)
+            {
+                caosResult = null;
+                return false;
+            }
+        }
+
+        public CaosResult ExecuteCaos(string CaosAsString, string Action = "execute")
+        {
+            //Need more exception checking here - JG
             InitInjector();
             byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
             int BufferPosition = 24;
@@ -79,6 +155,7 @@ namespace CAOS
             Thread.Sleep(50);
             return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
         }
+
         public int ProcessID()
         {
             Mutex.WaitOne();
@@ -89,17 +166,17 @@ namespace CAOS
     }
     public class CaosResult
     {
-        private bool failed;
-        public bool Failed { get { return failed; } }
-        private int processid;
-        public int ProcessID { get { return processid; } }
-        private string content;
-        public string Content { get { return content; } }
-        public CaosResult(int Failed, string Content, int ProcessID)
+        public int ResultCode { get; private set; }
+        public bool Success { get; private set; }
+        public int ProcessId { get; private set; }
+        public string Content { get; private set; }
+
+        public CaosResult(int resultCode, string content, int processID)
         {
-            this.failed = Convert.ToBoolean(Failed);
-            this.content = Content;
-            this.processid = ProcessID;
+            this.ResultCode = resultCode;
+            this.Success = (resultCode == 0);
+            this.Content = content;
+            this.ProcessId = processID;
         }
     }
 }
