@@ -27,7 +27,7 @@ namespace ConsoleApp1
             try
             {
                 CaosResult result = injector.ExecuteCaos("outs \"hi\"");
-                if (result.Succeded)
+                if (result.Success)
                 {
                     Console.WriteLine(result.Content);
                 }
@@ -47,7 +47,7 @@ namespace ConsoleApp1
             CaosResult result;
             if (injector.TryExecuteCaos("outs \"hi\"", out result))
             {
-                if (result.Succeded)
+                if (result.Success)
                 {
                     Console.WriteLine(result.Content);
                     //Just try to do it, we don't care about the results

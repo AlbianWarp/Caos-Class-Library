@@ -167,14 +167,14 @@ namespace CAOS
     public class CaosResult
     {
         public int ResultCode { get; private set; }
-        public bool Succeded { get; private set; }
+        public bool Success { get; private set; }
         public int ProcessId { get; private set; }
         public string Content { get; private set; }
 
         public CaosResult(int resultCode, string content, int processID)
         {
             this.ResultCode = resultCode;
-            this.Succeded = (resultCode == 0);
+            this.Success = (resultCode == 0);
             this.Content = content;
             this.ProcessId = processID;
         }
