@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CAOS", "CAOS\CAOS.csproj", "{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{013D15C0-A7FF-4D80-B36B-25E3D58E1FA4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CAOS", "CAOS\CAOS.csproj", "{A4EF3E36-9042-44AE-AD4D-B644A4F7C719}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
