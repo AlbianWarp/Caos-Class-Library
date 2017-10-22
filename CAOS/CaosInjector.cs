@@ -5,20 +5,20 @@ using System.Threading;
 
 namespace CAOS
 {
-    public static class CaosInjector
+    public class CaosInjector
     {
-        private static Mutex Mutex;
-        private static MemoryMappedFile MemFile;
-        private static MemoryMappedViewAccessor MemViewAccessor;
-        private static EventWaitHandle ResultEventHandle;
-        private static EventWaitHandle RequestRventHandle;
-        private static string GameName;
+        private Mutex Mutex;
+        private MemoryMappedFile MemFile;
+        private MemoryMappedViewAccessor MemViewAccessor;
+        private EventWaitHandle ResultEventHandle;
+        private EventWaitHandle RequestRventHandle;
+        private string GameName;
 
-        public static void SetGame(string gameName)
+        public CaosInjector(string gameName)
         {
             GameName = gameName;
             //It seems to me that these exceptions shouldn't be
-            //  thrown from the initializer. But it seems to
+            //  thrown from the constructor. But it seems to
             //  be mostly an opionion-based thing w/o any
             //  standard best practices. -JG
 
@@ -30,7 +30,7 @@ namespace CAOS
         /// This might not be necessary.
         ///     Hmm -JG
         /// </summary>
-        public static bool CanConnectToGame()
+        public bool CanConnectToGame()
         {
             try
             {
@@ -44,7 +44,7 @@ namespace CAOS
             }
         }
 
-        private static void InitInjector()
+        private void InitInjector()
         {
             try
             {
@@ -66,7 +66,7 @@ namespace CAOS
             }
         }
 
-        private static void CloseInjector()
+        private void CloseInjector()
         {
             RequestRventHandle.Close();
             ResultEventHandle.Close();
@@ -75,13 +75,13 @@ namespace CAOS
             Mutex.Close();
         }
 
-        public static bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
+        public bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
         {
             CaosResult temp;
             return TryAddScriptToScriptorium(family, genus, species, eventNum, script, out temp);
         }
 
-        public static bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script, out CaosResult caosResult)
+        public bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script, out CaosResult caosResult)
         {
             try
             {
@@ -95,22 +95,22 @@ namespace CAOS
             }
         }
 
-        public static CaosResult AddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
+        public CaosResult AddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
         {
-            return ExecuteCaosGetResult(script, "scrp " + family + " " + genus + " " + species + " " + eventNum);
+            return ExecuteCaos(script, "scrp " + family + " " + genus + " " + species + " " + eventNum);
         }
 
-        public static bool TryExecuteCaosGetResult(string caosAsString)
+        public bool TryExecuteCaos(string caosAsString)
         {
             CaosResult temp;
-            return TryExecuteCaosGetResult(caosAsString, out temp);
+            return TryExecuteCaos(caosAsString, out temp);
         }
 
-        public static bool TryExecuteCaosGetResult(string caosAsString, out CaosResult caosResult)
+        public bool TryExecuteCaos(string caosAsString, out CaosResult caosResult)
         {
             try
             {
-                caosResult = ExecuteCaosGetResult(caosAsString);
+                caosResult = ExecuteCaos(caosAsString);
                 return true;
             }
             catch (NoGameCaosException)
@@ -120,8 +120,9 @@ namespace CAOS
             }
         }
 
-        public static CaosResult ExecuteCaosGetResult(string CaosAsString, string Action = "execute")
+        public CaosResult ExecuteCaos(string CaosAsString, string Action = "execute")
         {
+            //Need more exception checking here - JG
             InitInjector();
             byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
             int BufferPosition = 24;
@@ -155,7 +156,7 @@ namespace CAOS
             return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
         }
 
-        public static int ProcessID()
+        public int ProcessID()
         {
             Mutex.WaitOne();
             int ProcessID = MemViewAccessor.ReadInt16(4);
