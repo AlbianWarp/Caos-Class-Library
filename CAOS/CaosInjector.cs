@@ -113,7 +113,7 @@ namespace CAOS
         {
             //Need more exception checking here - JG
             InitInjector();
-            byte[] caosBytes = Encoding.UTF8.GetBytes(action + "\n" + caosAsString + "\n");
+            byte[] caosBytes = Encoding.UTF8.GetBytes($"{action}\n{caosAsString}\0");
             int bufferPosition = 24;
             Mutex.WaitOne(1000);
             foreach (byte Byte in caosBytes)
