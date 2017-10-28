@@ -17,19 +17,8 @@ namespace CAOS
         public CaosInjector(string gameName)
         {
             GameName = gameName;
-            //It seems to me that these exceptions shouldn't be
-            //  thrown from the constructor. But it seems to
-            //  be mostly an opionion-based thing w/o any
-            //  standard best practices. -JG
-
-            //InitInjector();
-            //CloseInjector();
         }
 
-        /// <summary>
-        /// This might not be necessary.
-        ///     Hmm -JG
-        /// </summary>
         public bool CanConnectToGame()
         {
             try
