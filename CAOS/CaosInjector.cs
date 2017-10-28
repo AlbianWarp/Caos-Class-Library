@@ -23,7 +23,7 @@ Offset  Size    C Type          Memory Buffer Layout
 16      4       unsigned int    The size of the shared memory buffer. No requests or replies can be larger than this. It is currently set to about 1MB in the game engine.
 20      4       int             Padding to align data on an 8 byte boundary.
 24 -variable-Request dependant- This is where you store your request and retrieve your replies. Depending on the type of request it can be a null terminated array of characters or binary data.
-copied from http://double.nz/creatures/developer/sharedmemory.htm
+copied from double.nz/creatures/developer/sharedmemory.htm
 */
 
         private const int POS_ENGINE_NAME = 0;
@@ -46,7 +46,7 @@ copied from http://double.nz/creatures/developer/sharedmemory.htm
                 CloseInjector();
                 return true;
             }
-            catch (NoGameCaosException)
+            catch (NoRunningEngineException)
             {
                 return false;
             }
@@ -66,11 +66,11 @@ copied from http://double.nz/creatures/developer/sharedmemory.htm
                 when (e is WaitHandleCannotBeOpenedException
                 || e is System.IO.FileNotFoundException)
             {
-                throw new NoGameCaosException("No running game engine found.", e);
+                throw new NoRunningEngineException("No running game engine found.", e);
             }
             catch (UnauthorizedAccessException e)
             {
-                throw new NoGameCaosException("Cannot find or access any running game engine.", e);
+                throw new NoRunningEngineException("Cannot find or access any running game engine.", e);
             }
         }
 
@@ -96,7 +96,7 @@ copied from http://double.nz/creatures/developer/sharedmemory.htm
                 caosResult = AddScriptToScriptorium(family, genus, species, eventNum, script);
                 return true;
             }
-            catch (NoGameCaosException)
+            catch (NoRunningEngineException)
             {
                 caosResult = null;
                 return false;
@@ -121,7 +121,7 @@ copied from http://double.nz/creatures/developer/sharedmemory.htm
                 caosResult = ExecuteCaos(caosAsString);
                 return true;
             }
-            catch (NoGameCaosException)
+            catch (NoRunningEngineException)
             {
                 caosResult = null;
                 return false;

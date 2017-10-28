@@ -36,7 +36,7 @@ namespace ConsoleApp1
                     Console.WriteLine($"Error Code: {result.ResultCode}");
                 }
             }
-            catch (NoGameCaosException e)
+            catch (NoEngineCaosException e)
             {
                 Console.WriteLine($"Game exited unexpectedly. Error message: {e.Message}");
             }

@@ -14,15 +14,27 @@ namespace CAOS
         { }
     }
 
-    public class NoGameCaosException : CaosExpection
+    public class NoRunningEngineException : CaosExpection
     {
-        public NoGameCaosException()
+        public NoRunningEngineException()
         { }
 
-        public NoGameCaosException(string message) : base(message)
+        public NoRunningEngineException(string message) : base(message)
         { }
 
-        public NoGameCaosException(string message, Exception innerException) : base(message, innerException)
+        public NoRunningEngineException(string message, Exception innerException) : base(message, innerException)
+        { }
+    }
+
+    public class UnexpectedEngineOutputException : CaosExpection
+    {
+        public UnexpectedEngineOutputException()
+        { }
+
+        public UnexpectedEngineOutputException(string message) : base(message)
+        { }
+
+        public UnexpectedEngineOutputException(string message, Exception innerException) : base(message, innerException)
         { }
     }
 }
