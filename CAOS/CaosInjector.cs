@@ -2,6 +2,7 @@
 using System.Text;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
+using System.Linq;
 
 namespace CAOS
 {
@@ -118,13 +119,14 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             int resultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
             int processID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
 
-            for (int i = POS_BUFFER; i < resultSize; i++)
+            for (int i = 0; i < resultSize; i++)
             {
-                resultBytes[i] = MemViewAccessor.ReadByte(i);
+                resultBytes[i] = MemViewAccessor.ReadByte(POS_BUFFER+i);
             }
 
-            int overwriteLength = (caosBytes.Length > resultSize) ? caosBytes.Length : resultSize;
-            for (int i = POS_BUFFER; i < overwriteLength; i++)
+            int overwriteLength =
+                (caosBytes.Length > resultSize) ? caosBytes.Length : resultSize;
+            for (int i = 0; i < overwriteLength; i++)
             {
                 MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
             }
@@ -132,7 +134,30 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             Mutex.ReleaseMutex();
             CloseInjector();
             Thread.Sleep(50);
-            return new CaosResult(resultCode, Encoding.UTF8.GetString(resultBytes), processID);
+
+            string resultForTyping = Encoding.UTF8.GetString(resultBytes);
+            string resultForOutput;
+            if (CaosCommandReturnsNullTermString(caosAsString))
+            {
+                if (resultBytes.Length > 0 && resultBytes[resultBytes.Length-1] != (byte)0)
+                {
+                    throw new UnexpectedEngineOutputException
+                    (
+                        "Result was expected to be null-terminated, but it was not. Result:" + Environment.NewLine
+                        + Encoding.UTF8.GetString(resultBytes)
+                    );
+                }
+                else
+                {
+                    resultForOutput = resultForTyping.Substring(0, resultForTyping.Length-1);
+                }
+            }
+            else
+            {
+                resultForOutput = resultForTyping;
+            }
+
+            return new CaosResult(resultCode, resultForOutput, processID);
         }
 
         public int ProcessID()
@@ -172,6 +197,16 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             MemViewAccessor.Dispose();
             MemFile.Dispose();
             Mutex.Close();
+        }
+
+        private bool CaosCommandReturnsNullTermString(string caosCode)
+        {
+            //Needs more checking for other CAOS commands that return other data types.
+            //  But I (JG) can't find any besides DBG: HTML and even that's just
+            //  a non-null-terminated string
+            //And for just DBG: HTML, check for things like:
+            //  "outs \"there ain't no dbg: html 1 in this command, ya dummy.\""
+            return !caosCode.ToLower().Contains("dbg: html ");
         }
     }
 
