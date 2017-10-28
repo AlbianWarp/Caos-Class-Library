@@ -14,6 +14,25 @@ namespace CAOS
         private EventWaitHandle RequestRventHandle;
         private string GameName;
 
+/*
+Offset  Size    C Type          Memory Buffer Layout
+0       4       CHAR            4 characters which should be 'c2e@'. If it is not this then either the buffer is corrupt or you're looking in the wrong place.
+4       4       DWORD           Process id of the game engine. By retrieving this you can use Windows API functions to ensure that the game engine is still running, or be notified if it is closed, when waiting for results.
+8       4       int             Result code from the last game engine request submitted. A '0' is success, a '1' is failed. If there is a failure the reason for the failure is in the data section below.
+12      4       unsigned int    The size in bytes of the data returned in the data buffer.
+16      4       unsigned int    The size of the shared memory buffer. No requests or replies can be larger than this. It is currently set to about 1MB in the game engine.
+20      4       int             Padding to align data on an 8 byte boundary.
+24 -variable-Request dependant- This is where you store your request and retrieve your replies. Depending on the type of request it can be a null terminated array of characters or binary data.
+copied from http://double.nz/creatures/developer/sharedmemory.htm
+*/
+
+        private const int POS_ENGINE_NAME = 0;
+        private const int POS_PROCESS_ID = 4;
+        private const int POS_RESULT_CODE = 8;
+        private const int POS_RESULT_SIZE = 12;
+        private const int POS_MEMORY_BUFFER_SIZE = 16; //documentation available is unclear if this includes the variables
+        private const int POS_BUFFER = 24;
+
         public CaosInjector(string gameName)
         {
             GameName = gameName;
@@ -114,7 +133,7 @@ namespace CAOS
             //Need more exception checking here - JG
             InitInjector();
             byte[] caosBytes = Encoding.UTF8.GetBytes($"{action}\n{caosAsString}\0");
-            int bufferPosition = 24;
+            int bufferPosition = POS_BUFFER;
             Mutex.WaitOne(1000);
             foreach (byte Byte in caosBytes)
             {
@@ -123,22 +142,24 @@ namespace CAOS
             }
             RequestRventHandle.Set();
             ResultEventHandle.WaitOne(5000);
-            int resultSize = MemViewAccessor.ReadInt16(12);
+            int resultSize = MemViewAccessor.ReadInt16(POS_RESULT_SIZE);
             byte[] resultBytes = new byte[resultSize];
             int resultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
             int processID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
             for (int i = 0; i < resultSize; i++)
             {
-                resultBytes[i] = MemViewAccessor.ReadByte(24 + i);
+                resultBytes[i] = MemViewAccessor.ReadByte(POS_BUFFER + i);
             }
+
             for (int i = 0; i < caosBytes.Length; i++)
             {
-                MemViewAccessor.Write(24 + i, (byte)0);
+                MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
             }
             for (int i = 0; i < resultSize; i++)
             {
-                MemViewAccessor.Write(24 + i, (byte)0);
+                MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
             }
+
             Mutex.ReleaseMutex();
             CloseInjector();
             Thread.Sleep(50);
