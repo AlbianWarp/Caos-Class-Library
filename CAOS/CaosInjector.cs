@@ -67,7 +67,7 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             }
             catch (NoRunningEngineException)
             {
-                caosResult = null;
+                caosResult = new CaosResult();
                 return false;
             }
         }
@@ -92,7 +92,7 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             }
             catch (NoRunningEngineException)
             {
-                caosResult = null;
+                caosResult = new CaosResult();
                 return false;
             }
         }
@@ -178,16 +178,30 @@ copied from double.nz/creatures/developer/sharedmemory.htm
     public class CaosResult
     {
         public int ResultCode { get; private set; }
-        public bool Success { get; private set; }
+        public bool Success => (ResultCode == 0);
         public int ProcessId { get; private set; }
         public string Content { get; private set; }
 
         public CaosResult(int resultCode, string content, int processID)
         {
             this.ResultCode = resultCode;
-            this.Success = (resultCode == 0);
             this.Content = content;
             this.ProcessId = processID;
+        }
+
+        public CaosResult()
+        {
+            this.ResultCode = -1;
+            this.Content = string.Empty;
+            this.ProcessId = -1;
+        }
+
+        public override string ToString()
+        {
+            return
+                $"Code: {ResultCode}." + Environment.NewLine
+                + $"Content: {Content}." + Environment.NewLine
+                + $"ProcessId: {ProcessId}";
         }
     }
 }
