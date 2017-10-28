@@ -135,27 +135,27 @@ copied from http://double.nz/creatures/developer/sharedmemory.htm
             byte[] caosBytes = Encoding.UTF8.GetBytes($"{action}\n{caosAsString}\0");
             int bufferPosition = POS_BUFFER;
             Mutex.WaitOne(1000);
-            foreach (byte Byte in caosBytes)
+
+            foreach (byte b in caosBytes)
             {
-                MemViewAccessor.Write(bufferPosition, Byte);
+                MemViewAccessor.Write(bufferPosition, b);
                 bufferPosition++;
             }
+
             RequestRventHandle.Set();
             ResultEventHandle.WaitOne(5000);
             int resultSize = MemViewAccessor.ReadInt16(POS_RESULT_SIZE);
             byte[] resultBytes = new byte[resultSize];
             int resultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
             int processID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
-            for (int i = 0; i < resultSize; i++)
+
+            for (int i = POS_BUFFER; i < resultSize; i++)
             {
-                resultBytes[i] = MemViewAccessor.ReadByte(POS_BUFFER + i);
+                resultBytes[i] = MemViewAccessor.ReadByte(i);
             }
 
-            for (int i = 0; i < caosBytes.Length; i++)
-            {
-                MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
-            }
-            for (int i = 0; i < resultSize; i++)
+            int overwriteLength = (caosBytes.Length > resultSize) ? caosBytes.Length : resultSize;
+            for (int i = POS_BUFFER; i < overwriteLength; i++)
             {
                 MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
             }
