@@ -109,40 +109,40 @@ namespace CAOS
             }
         }
 
-        public CaosResult ExecuteCaos(string CaosAsString, string Action = "execute")
+        public CaosResult ExecuteCaos(string caosAsString, string action = "execute")
         {
             //Need more exception checking here - JG
             InitInjector();
-            byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
-            int BufferPosition = 24;
+            byte[] caosBytes = Encoding.UTF8.GetBytes(action + "\n" + caosAsString + "\n");
+            int bufferPosition = 24;
             Mutex.WaitOne(1000);
-            foreach (byte Byte in CaosBytes)
+            foreach (byte Byte in caosBytes)
             {
-                MemViewAccessor.Write(BufferPosition, Byte);
-                BufferPosition++;
+                MemViewAccessor.Write(bufferPosition, Byte);
+                bufferPosition++;
             }
             RequestRventHandle.Set();
             ResultEventHandle.WaitOne(5000);
-            int ResultSize = MemViewAccessor.ReadInt16(12);
-            byte[] ResultBytes = new byte[ResultSize];
-            int ResultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
-            int ProcessID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
-            for (int i = 0; i < ResultSize; i++)
+            int resultSize = MemViewAccessor.ReadInt16(12);
+            byte[] resultBytes = new byte[resultSize];
+            int resultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
+            int processID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
+            for (int i = 0; i < resultSize; i++)
             {
-                ResultBytes[i] = MemViewAccessor.ReadByte(24 + i);
+                resultBytes[i] = MemViewAccessor.ReadByte(24 + i);
             }
-            for (int i = 0; i < CaosBytes.Length; i++)
+            for (int i = 0; i < caosBytes.Length; i++)
             {
                 MemViewAccessor.Write(24 + i, (byte)0);
             }
-            for (int i = 0; i < ResultSize; i++)
+            for (int i = 0; i < resultSize; i++)
             {
                 MemViewAccessor.Write(24 + i, (byte)0);
             }
             Mutex.ReleaseMutex();
             CloseInjector();
             Thread.Sleep(50);
-            return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
+            return new CaosResult(resultCode, Encoding.UTF8.GetString(resultBytes), processID);
         }
 
         public int ProcessID()
