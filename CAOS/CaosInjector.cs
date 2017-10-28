@@ -52,37 +52,6 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             }
         }
 
-        private void InitInjector()
-        {
-            try
-            {
-                Mutex = Mutex.OpenExisting(GameName + "_mutex");
-                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
-                MemViewAccessor = MemFile.CreateViewAccessor();
-                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
-                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
-            }
-            catch (Exception e)
-                when (e is WaitHandleCannotBeOpenedException
-                || e is System.IO.FileNotFoundException)
-            {
-                throw new NoRunningEngineException("No running game engine found.", e);
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                throw new NoRunningEngineException("Cannot find or access any running game engine.", e);
-            }
-        }
-
-        private void CloseInjector()
-        {
-            RequestRventHandle.Close();
-            ResultEventHandle.Close();
-            MemViewAccessor.Dispose();
-            MemFile.Dispose();
-            Mutex.Close();
-        }
-
         public bool TryAddScriptToScriptorium(int family, int genus, int species, int eventNum, string script)
         {
             CaosResult temp;
@@ -173,7 +142,39 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             Mutex.ReleaseMutex();
             return ProcessID;
         }
+
+        private void InitInjector()
+        {
+            try
+            {
+                Mutex = Mutex.OpenExisting(GameName + "_mutex");
+                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
+                MemViewAccessor = MemFile.CreateViewAccessor();
+                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
+                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
+            }
+            catch (Exception e)
+                when (e is WaitHandleCannotBeOpenedException
+                || e is System.IO.FileNotFoundException)
+            {
+                throw new NoRunningEngineException("No running game engine found.", e);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw new NoRunningEngineException("Cannot find or access any running game engine.", e);
+            }
+        }
+
+        private void CloseInjector()
+        {
+            RequestRventHandle.Close();
+            ResultEventHandle.Close();
+            MemViewAccessor.Dispose();
+            MemFile.Dispose();
+            Mutex.Close();
+        }
     }
+
     public class CaosResult
     {
         public int ResultCode { get; private set; }
