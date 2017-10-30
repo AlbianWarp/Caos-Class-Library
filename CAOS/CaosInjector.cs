@@ -137,9 +137,9 @@ copied from double.nz/creatures/developer/sharedmemory.htm
 
             string resultForTyping = Encoding.UTF8.GetString(resultBytes);
             string resultForOutput;
-            if (CaosCommandReturnsNullTermString(caosAsString))
+            if (resultCode==0 && CaosCommandReturnsNullTermString(caosAsString))
             {
-                if (resultBytes.Length > 0 && resultBytes[resultBytes.Length-1] != (byte)0)
+                if (resultBytes.Length < 1 || resultBytes[resultBytes.Length-1] != (byte)0)
                 {
                     throw new UnexpectedEngineOutputException
                     (
