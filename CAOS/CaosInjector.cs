@@ -8,11 +8,6 @@ namespace CAOS
 {
     public class CaosInjector
     {
-        private Mutex Mutex;
-        private MemoryMappedFile MemFile;
-        private MemoryMappedViewAccessor MemViewAccessor;
-        private EventWaitHandle ResultEventHandle;
-        private EventWaitHandle RequestRventHandle;
         private string GameName;
 
 /*
@@ -43,8 +38,7 @@ copied from double.nz/creatures/developer/sharedmemory.htm
         {
             try
             {
-                InitInjector();
-                CloseInjector();
+                ExecuteCaos("outs \"Hello, World!\"");
                 return true;
             }
             catch (NoRunningEngineException)
@@ -100,83 +94,77 @@ copied from double.nz/creatures/developer/sharedmemory.htm
 
         public CaosResult ExecuteCaos(string caosAsString, string action = "execute")
         {
+            Mutex mutex = null;
+            MemoryMappedFile memFile = null;
+            MemoryMappedViewAccessor memViewAccessor = null;
+            EventWaitHandle resultEventHandle = null;
+            EventWaitHandle requestRventHandle = null;
             //Need more exception checking here - JG
-            InitInjector();
-            byte[] caosBytes = Encoding.UTF8.GetBytes($"{action}\n{caosAsString}\0");
-            int bufferPosition = POS_BUFFER;
-            Mutex.WaitOne(1000);
-
-            foreach (byte b in caosBytes)
-            {
-                MemViewAccessor.Write(bufferPosition, b);
-                bufferPosition++;
-            }
-
-            RequestRventHandle.Set();
-            ResultEventHandle.WaitOne(5000);
-            int resultSize = MemViewAccessor.ReadInt16(POS_RESULT_SIZE);
-            byte[] resultBytes = new byte[resultSize];
-            int resultCode = Convert.ToInt16(MemViewAccessor.ReadByte(8));
-            int processID = Convert.ToInt16(MemViewAccessor.ReadByte(4));
-
-            for (int i = 0; i < resultSize; i++)
-            {
-                resultBytes[i] = MemViewAccessor.ReadByte(POS_BUFFER+i);
-            }
-
-            int overwriteLength =
-                (caosBytes.Length > resultSize) ? caosBytes.Length : resultSize;
-            for (int i = 0; i < overwriteLength; i++)
-            {
-                MemViewAccessor.Write(POS_BUFFER + i, (byte)0);
-            }
-
-            Mutex.ReleaseMutex();
-            CloseInjector();
-            Thread.Sleep(50);
-
-            string resultForTyping = Encoding.UTF8.GetString(resultBytes);
-            string resultForOutput;
-            if (resultCode==0 && CaosCommandReturnsNullTermString(caosAsString))
-            {
-                if (resultBytes.Length < 1 || resultBytes[resultBytes.Length-1] != (byte)0)
-                {
-                    throw new UnexpectedEngineOutputException
-                    (
-                        "Result was expected to be null-terminated, but it was not. Result:" + Environment.NewLine
-                        + Encoding.UTF8.GetString(resultBytes)
-                    );
-                }
-                else
-                {
-                    resultForOutput = resultForTyping.Substring(0, resultForTyping.Length-1);
-                }
-            }
-            else
-            {
-                resultForOutput = resultForTyping;
-            }
-
-            return new CaosResult(resultCode, resultForOutput, processID);
-        }
-
-        public int ProcessID()
-        {
-            Mutex.WaitOne();
-            int ProcessID = MemViewAccessor.ReadInt16(4);
-            Mutex.ReleaseMutex();
-            return ProcessID;
-        }
-
-        private void InitInjector()
-        {
             try
             {
-                Mutex = Mutex.OpenExisting(GameName + "_mutex");
-                MemFile = MemoryMappedFile.OpenExisting(GameName + "_mem");
-                MemViewAccessor = MemFile.CreateViewAccessor();
-                ResultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
-                RequestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
+                mutex = Mutex.OpenExisting(GameName + "_mutex");
+                using (memFile = MemoryMappedFile.OpenExisting(GameName + "_mem"))
+                using (memViewAccessor = memFile.CreateViewAccessor())
+                {
+                    resultEventHandle = EventWaitHandle.OpenExisting(GameName + "_result");
+                    requestRventHandle = EventWaitHandle.OpenExisting(GameName + "_request");
+                    byte[] caosBytes = Encoding.UTF8.GetBytes($"{action}\n{caosAsString}\0");
+                    int bufferPosition = POS_BUFFER;
+                    mutex.WaitOne(1000);
+
+                    foreach (byte b in caosBytes)
+                    {
+                        memViewAccessor.Write(bufferPosition, b);
+                        bufferPosition++;
+                    }
+
+                    requestRventHandle.Set();
+                    resultEventHandle.WaitOne(5000);
+                    int resultSize = memViewAccessor.ReadInt16(POS_RESULT_SIZE);
+                    byte[] resultBytes = new byte[resultSize];
+                    int resultCode = Convert.ToInt16(memViewAccessor.ReadByte(8));
+                    int processID = Convert.ToInt16(memViewAccessor.ReadByte(4));
+
+                    for (int i = 0; i < resultSize; i++)
+                    {
+                        resultBytes[i] = memViewAccessor.ReadByte(POS_BUFFER + i);
+                    }
+
+                    int overwriteLength =
+                        (caosBytes.Length > resultSize) ? caosBytes.Length : resultSize;
+                    for (int i = 0; i < overwriteLength; i++)
+                    {
+                        memViewAccessor.Write(POS_BUFFER + i, (byte)0);
+                    }
+
+                    mutex.ReleaseMutex();
+                    //CloseInjector();
+
+                    Thread.Sleep(50);
+
+                    string resultForTyping = Encoding.UTF8.GetString(resultBytes);
+                    string resultForOutput;
+                    if (resultCode == 0 && CaosCommandReturnsNullTermString(caosAsString))
+                    {
+                        if (resultBytes.Length < 1 || resultBytes[resultBytes.Length - 1] != (byte)0)
+                        {
+                            throw new UnexpectedEngineOutputException
+                            (
+                                "Result was expected to be null-terminated, but it was not. Result:" + Environment.NewLine
+                                + Encoding.UTF8.GetString(resultBytes)
+                            );
+                        }
+                        else
+                        {
+                            resultForOutput = resultForTyping.Substring(0, resultForTyping.Length - 1);
+                        }
+                    }
+                    else
+                    {
+                        resultForOutput = resultForTyping;
+                    }
+                    return new CaosResult(resultCode, resultForOutput, processID);
+                }
             }
             catch (Exception e)
                 when (e is WaitHandleCannotBeOpenedException
@@ -188,16 +176,21 @@ copied from double.nz/creatures/developer/sharedmemory.htm
             {
                 throw new NoRunningEngineException("Cannot find or access any running game engine.", e);
             }
+            finally
+            {
+                requestRventHandle?.Close();
+                resultEventHandle?.Close();
+                mutex?.Close();
+            }
         }
 
-        private void CloseInjector()
+        /*public int ProcessID()
         {
-            RequestRventHandle.Close();
-            ResultEventHandle.Close();
-            MemViewAccessor.Dispose();
-            MemFile.Dispose();
-            Mutex.Close();
-        }
+            Mutex.WaitOne();
+            int ProcessID = MemViewAccessor.ReadInt16(4);
+            Mutex.ReleaseMutex();
+            return ProcessID;
+        }*/
 
         private bool CaosCommandReturnsNullTermString(string caosCode)
         {
