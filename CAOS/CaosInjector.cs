@@ -13,6 +13,7 @@ namespace CAOS
         private EventWaitHandle ResultEventHandle;
         private EventWaitHandle RequestRventHandle;
         private string GameName;
+        private static readonly Encoding Encoder = Encoding.GetEncoding(1252);
 
         public CaosInjector(string gameName)
         {
@@ -113,7 +114,7 @@ namespace CAOS
         {
             //Need more exception checking here - JG
             InitInjector();
-            byte[] CaosBytes = Encoding.UTF8.GetBytes(Action + "\n" + CaosAsString + "\n");
+            byte[] CaosBytes = Encoder.GetBytes(Action + "\n" + CaosAsString + "\n");
             int BufferPosition = 24;
             Mutex.WaitOne(1000);
             foreach (byte Byte in CaosBytes)
@@ -142,7 +143,7 @@ namespace CAOS
             Mutex.ReleaseMutex();
             CloseInjector();
             Thread.Sleep(50);
-            return new CaosResult(ResultCode, Encoding.UTF8.GetString(ResultBytes), ProcessID);
+            return new CaosResult(ResultCode, Encoder.GetString(ResultBytes), ProcessID);
         }
 
         public int ProcessID()
